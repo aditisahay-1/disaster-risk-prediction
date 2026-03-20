@@ -1,7 +1,15 @@
-data/
-models/
-*.pkl
-*.csv
-*.xlsx
+# Python
 __pycache__/
-.ipynb_checkpoints
+*.pyc
+
+# Models
+models/*.pkl
+models/*.keras
+
+# Data
+data/*.csv
+data/*.xlsx
+
+# Env
+.env
+venv/

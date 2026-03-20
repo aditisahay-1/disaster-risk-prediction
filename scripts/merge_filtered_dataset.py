@@ -1,13 +1,14 @@
 import pandas as pd
 
-# load hazard features
+# -----------------------------
+# Load hazard features
+# -----------------------------
 eq = pd.read_csv("data/earthquake_features.csv")
 wf = pd.read_csv("data/wildfire_features.csv")
 
-# load filtered EM-DAT impacts
-impact = pd.read_csv("data/emdat_filtered_impact.csv")
-
-# merge earthquake + wildfire features
+# -----------------------------
+# Merge hazard features
+# -----------------------------
 hazards = pd.merge(
     eq,
     wf,
@@ -17,16 +18,45 @@ hazards = pd.merge(
 
 hazards = hazards.fillna(0)
 
-# merge with impact dataset
+# -----------------------------
+# Load MULTI-DISASTER impact
+# -----------------------------
+impact = pd.read_csv("data/emdat_multi_disaster_impact.csv")
+
+# -----------------------------
+# Merge hazards + impact
+# -----------------------------
 df = pd.merge(
     hazards,
     impact,
     on=["lat_grid", "lon_grid", "year", "month"],
-    how="inner"
+    how="left"   # 🔥 VERY IMPORTANT
 )
 
-df.to_csv("data/disaster_filtered_regression_dataset.csv", index=False)
+# -----------------------------
+# Fill missing values
+# -----------------------------
+df = df.fillna(0)
 
-print("Filtered regression dataset created")
+# -----------------------------
+# Sort for time-series
+# -----------------------------
+df = df.sort_values(by=["lat_grid", "lon_grid", "year", "month"])
+
+# -----------------------------
+# Add temporal feature (lag)
+# -----------------------------
+df["prev_earthquake"] = df.groupby(["lat_grid","lon_grid"])["earthquake_count"].shift(1)
+df["prev_fire"] = df.groupby(["lat_grid","lon_grid"])["fire_count"].shift(1)
+
+df["prev_earthquake"] = df["prev_earthquake"].fillna(0)
+df["prev_fire"] = df["prev_fire"].fillna(0)
+
+# -----------------------------
+# Save FINAL dataset
+# -----------------------------
+df.to_csv("data/final_disaster_dataset.csv", index=False)
+
+print("✅ Final dataset created")
 print(df.head())
 print("Shape:", df.shape)
